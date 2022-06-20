@@ -85,7 +85,7 @@ func RandomString(n int) string {
 func InitDB() *gorm.DB {
 	//driverName := "mysql"
 	username := "root"
-	password := "fittime1991"
+	password := "Root@123"
 	host := "localhost"
 	port := 3306
 	database := "ginessential"
