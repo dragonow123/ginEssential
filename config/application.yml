@@ -1,0 +1,10 @@
+server:
+  port: 1016
+datasource:
+  host: localhost
+  port: 3306
+  database: ginessential
+  username: root
+  password: Root@123
+  charset: utf8
+  timeout: 10s
