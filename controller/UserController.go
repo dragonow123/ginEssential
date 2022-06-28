@@ -14,11 +14,20 @@ import (
 )
 
 func Register(ctx *gin.Context) {
-	DB := common.DB
+	DB := common.GetDB()
+	// 使用map获取请求的参数
+	//var requestMap = make(map[string]string)
+	//json.NewDecoder(ctx.Request.Body).Decode(&requestMap)
+
+	//
+	var requestUser = model.User{}
+	//json.NewDecoder(ctx.Request.Body).Decode(&requestUser)
+	ctx.Bind(&requestUser)
+
 	// 获取参数
-	name := ctx.PostForm("name")
-	telephone := ctx.PostForm("telephone")
-	password := ctx.PostForm("password")
+	name := requestUser.Name
+	telephone := requestUser.Telephone
+	password := requestUser.Password
 
 	// 数据验证
 	if len(telephone) != 11 {
@@ -54,31 +63,38 @@ func Register(ctx *gin.Context) {
 		Password:  string(hasedPassword),
 	}
 	DB.Create(&newUser)
+
+	//发放token
+	token, err := common.ReleaseToken(newUser)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "系统异常"})
+		log.Printf("token generate error : %v", err)
+		return
+	}
 	//返回结果
-	//ctx.JSON(200, gin.H{
-	//"code":    200,
-	//"message": "注册成功",
-	//})
-	response.Success(ctx, nil, "注册成功")
+	response.Success(ctx, gin.H{"token": token}, "注册成功")
 }
 
 func Login(ctx *gin.Context) {
 	DB := common.GetDB()
-	//获取参数
-	telephone := ctx.PostForm("telephone")
-	password := ctx.PostForm("password")
+	var requestUser = model.User{}
+	//json.NewDecoder(ctx.Request.Body).Decode(&requestUser)
+	ctx.Bind(&requestUser)
 
-	//数据验证
+	// 获取参数
+	telephone := requestUser.Telephone
+	password := requestUser.Password
+
+	// 数据验证
 	if len(telephone) != 11 {
-		response.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "手机号必须为11位")
-		//ctx.JSON(http.StatusUnprocessableEntity, gin.H{"code": 422, "msg": "手机号必须为11位"})
+		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"code": 422, "msg": "手机号必须为11位"})
 		return
 	}
 	if len(password) < 6 {
-		response.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "密码不能少于6位")
-		//ctx.JSON(http.StatusUnprocessableEntity, gin.H{"code": 422, "msg": "密码不能少于6位"})
+		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"code": 422, "msg": "密码不能少于6位"})
 		return
 	}
+
 	//判断手机号是否存在
 	var user model.User
 	DB.Where("telephone = ?", telephone).First(&user)
@@ -99,12 +115,7 @@ func Login(ctx *gin.Context) {
 		return
 	}
 	//返回结果
-	ctx.JSON(200, gin.H{
-		"code": 200,
-		"data": gin.H{"token": token},
-		"msg":  "登录成功",
-	})
-
+	response.Success(ctx, gin.H{"token": token}, "登录成功")
 }
 
 func Info(ctx *gin.Context) {
